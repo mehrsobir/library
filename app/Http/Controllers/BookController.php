@@ -3,60 +3,68 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
-use App\Models\Type;
-use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManagerStatic as Image;
 
 class BookController extends Controller
 {
-    public function index(Request $request) {
-        Paginator::useBootstrap();
-        if ($request->category) {
-            $books = Book::latest()->where('lang', app()->getLocale())->where('category_id', $request->category)->paginate(10);
-        }else{
-            $books = Book::latest()->where('lang', app()->getLocale())->paginate(10);
-        };
-        return view('book.index', [
-            'books' => $books,
-            'types' => Type::all(),
-            'cats' => Category::all(),
-            'selected' => $request->category
-        ]);
+    public function __construct()
+    {
+        $this->middleware('auth');
     }
 
-    public function search(Request $request) {
+    // get all books
+    public function index() {
         Paginator::useBootstrap();
-        $search = $request->search;
-        if ($search) {
-            $books = Book::where('lang', app()->getLocale())
-                ->where(function($query)  use ($search){
-                    $query->where('title', 'like', '%' . $search . '%')->orWhere('annotation', 'like', '%' . $search . '%');
-                })->paginate(10);
-        }else{
-            $books = Book::latest()->where('lang', app()->getLocale())->paginate(10);
-        };
         return view('book.index', [
-            'books' => $books,
-            'types' => Type::all(),
-            'cats' => Category::all(),
+            'books' => Book::latest()->paginate(20)
         ]);
     }
     
-    public function show(Request $request) {
-        return view('book.show', [
-            'book' => Book::where('slug', $request->book)->first(),
-            'types' => Type::all(),
-
+    public function create(Request $request) {
+        return view('book.create', [
+            
         ]);
     }
 
-    public function export(Request $request) {
-        $file = Book::where('slug', $request->book)->first();
+    public function edit(Book $book, Request $request) {
+        return view('book.edit', [
+            'book' => $request->book
+        ]);
+    }
 
-        return response()->file(
-            storage_path('app/public/' . $file->pdf)
-        );
-    
+    public function store(Request $request) {
+        $formFields = $request->validate([
+            'title' => 'required',
+            'author' => 'required',
+            'pages' => 'required',
+            'pub_year' => 'required'
+        ]);
+
+        
+        Book::create($formFields);
+
+        return redirect('/books')->with('message', 'Success!!'); 
+    }  
+
+    public function update(Request $request, Book $book) {
+        
+        $formFields = $request->validate([
+            'title' => 'required',
+            'author' => 'required',
+            'pages' => 'required',
+            'pub_year' => 'required'
+        ]);
+
+        $book->update($formFields);
+
+        return redirect('/books')->with('message', 'Done!!'); 
+    }  
+
+    public function destroy(Book $book) {
+        $book->delete();
+        return redirect('/books')->with('message', 'Deleted!!');
     }
 }

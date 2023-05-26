@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Models\Author;
+
 use Illuminate\Support\ServiceProvider;
 
 
@@ -23,8 +23,5 @@ class AppServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot()
-    {
-        Author::unguard();
-    }
+   
 }
